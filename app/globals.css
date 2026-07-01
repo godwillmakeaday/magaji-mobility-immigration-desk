@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+
+  body {
+    @apply bg-paper text-charcoal font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3 {
+    @apply font-display text-ink;
+    font-feature-settings: "liga" 1;
+  }
+
+  ::selection {
+    background: rgba(176, 141, 87, 0.24);
+    color: #14213d;
+  }
+
+  a, button {
+    outline-offset: 3px;
+  }
+
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid #2f5d4f;
+    border-radius: 2px;
+  }
+}
+
+@layer components {
+  .shell {
+    @apply mx-auto w-full max-w-content px-6 sm:px-8 lg:px-10;
+  }
+
+  .eyebrow {
+    @apply font-sans text-xs font-semibold uppercase tracking-eyebrow text-brass-deep;
+  }
+
+  .rule-top {
+    border-top: 1px solid theme("colors.hairline");
+  }
+
+  /* Brass underline that animates in for the signature ledger lines */
+  .ledger-line {
+    position: relative;
+  }
+  .ledger-line::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -10px;
+    height: 2px;
+    width: 56px;
+    background: linear-gradient(90deg, #b08d57 0%, rgba(176, 141, 87, 0) 100%);
+  }
+}
