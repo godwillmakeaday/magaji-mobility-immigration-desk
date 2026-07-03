@@ -7,7 +7,10 @@ import PackagesSection from "@/components/PackagesSection";
 import ProcessSection from "@/components/ProcessSection";
 import DestinationDesks from "@/components/DestinationDesks";
 import RedFlagsSection from "@/components/RedFlagsSection";
+import RiskChecker from "@/components/RiskChecker";
+import StatusExplainer from "@/components/StatusExplainer";
 import CTASection from "@/components/CTASection";
+import MobilityIntakeForm from "@/components/MobilityIntakeForm";
 import Footer from "@/components/Footer";
 
 export default function Home() {
@@ -23,7 +26,10 @@ export default function Home() {
         <ProcessSection />
         <DestinationDesks />
         <RedFlagsSection />
+        <RiskChecker />
+        <StatusExplainer />
         <CTASection />
+        <MobilityIntakeForm />
       </main>
       <Footer />
     </>

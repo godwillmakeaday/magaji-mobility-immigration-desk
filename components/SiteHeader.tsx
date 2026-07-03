@@ -7,6 +7,7 @@ const nav = [
   { label: "Packages", href: "#packages" },
   { label: "Process", href: "#process" },
   { label: "Desks", href: "#desks" },
+  { label: "Risk Check", href: "#risk-checker" },
 ];
 
 export default function SiteHeader() {

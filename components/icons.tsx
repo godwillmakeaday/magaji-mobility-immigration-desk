@@ -140,6 +140,16 @@ export function IconCross(props: IconProps) {
   );
 }
 
+export function IconUpload(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+      <path d="M12 15V4" />
+      <path d="m8 8 4-4 4 4" />
+    </svg>
+  );
+}
+
 /** Magaji Law monogram seal — the recurring signature mark. */
 export function Seal({ className }: { className?: string }) {
   return (

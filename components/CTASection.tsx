@@ -3,7 +3,7 @@ import { Seal } from "./icons";
 
 export default function CTASection() {
   return (
-    <section id="contact" className="bg-paper py-20 lg:py-28">
+    <section id="cta" className="bg-paper py-20 lg:py-28">
       <div className="shell">
         <div className="relative overflow-hidden rounded-lg border border-hairline bg-ink px-8 py-16 text-center text-paper sm:px-12 lg:py-20">
           <div
@@ -24,7 +24,7 @@ export default function CTASection() {
           </p>
           <div className="relative mt-9 flex flex-wrap justify-center gap-4">
             <Button
-              href="https://wa.me/"
+              href="#contact"
               variant="ghost"
               withArrow
               className="!text-ink"
@@ -32,7 +32,7 @@ export default function CTASection() {
               Request Mobility Review
             </Button>
             <a
-              href="https://wa.me/"
+              href="#contact"
               className="inline-flex items-center justify-center rounded-sm border border-paper/30 px-6 py-3 text-sm font-semibold tracking-wide text-paper transition-colors duration-200 hover:border-brass hover:text-brass"
             >
               Report an Agent Issue

@@ -46,7 +46,7 @@ export default function Hero() {
             <Button href="#contact" variant="primary" withArrow>
               Request a Mobility Review
             </Button>
-            <Button href="#contact" variant="secondary">
+            <Button href="#risk-checker" variant="secondary">
               Check an Agent or Offer
             </Button>
           </div>

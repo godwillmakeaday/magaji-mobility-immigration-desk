@@ -1,0 +1,121 @@
+// Magaji Law — Mobility & Immigration Desk
+// Rust-engine-free client (driver adapters + query compiler) so it runs cleanly
+// on Neon serverless / Vercel without a native query-engine binary.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  runtime  = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MatterType {
+  VISIT_VISA_TRAVEL_DOCUMENTATION
+  WORK_ABROAD_JOB_OFFER
+  STUDY_ABROAD
+  AGENT_DISPUTE_REFUND
+  DIASPORA_LEGAL_SUPPORT
+  BUSINESS_INVESTOR_MOBILITY
+  OTHER
+}
+
+enum PaymentStatus {
+  NO_PAYMENT
+  PARTIAL_PAYMENT
+  FULL_PAYMENT
+  ABOUT_TO_PAY
+}
+
+enum ContactMethod {
+  WHATSAPP
+  PHONE_CALL
+  EMAIL
+}
+
+enum ReviewStatus {
+  NEW
+  REVIEWING
+  AWAITING_CLIENT
+  ACTION_REQUIRED
+  REFERRED_TO_PARTNER
+  CLOSED
+}
+
+enum RiskLevel {
+  LOW_VISIBLE_RISK
+  MODERATE_RISK
+  HIGH_RISK
+  SEVERE_RISK
+}
+
+enum RiskStatus {
+  NEW
+  REVIEWING
+  CONTACTED
+  CLOSED
+}
+
+model MobilityReview {
+  id                     String         @id @default(cuid())
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  fullName               String
+  phone                  String
+  email                  String?
+  currentLocation        String?
+  destinationCountry     String
+  matterType             MatterType
+  paymentStatus          PaymentStatus?
+  amountPaidOrRequested  String?
+  agentCompanyEmployer   String?
+  promiseMade            String?
+  documentsAvailable     String?
+  mainConcern            String
+  preferredContactMethod ContactMethod?
+  complianceAcknowledged Boolean        @default(false)
+  status                 ReviewStatus   @default(NEW)
+  internalNote           String?
+  documents              DocumentRecord[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model RiskCheck {
+  id                 String           @id @default(cuid())
+  createdAt          DateTime         @default(now())
+  destinationCountry String
+  mainConcern        String
+  selectedFlags      String[]
+  redFlagCount       Int
+  riskLevel          RiskLevel
+  optionalName       String?
+  optionalPhone      String?
+  optionalEmail      String?
+  status             RiskStatus       @default(NEW)
+  internalNote       String?
+  documents          DocumentRecord[]
+
+  @@index([riskLevel])
+  @@index([createdAt])
+}
+
+model DocumentRecord {
+  id          String          @id @default(cuid())
+  createdAt   DateTime        @default(now())
+  fileName    String
+  fileType    String?
+  fileSize    Int?
+  storageUrl  String?
+  reviewId    String?
+  riskCheckId String?
+  note        String?
+  review      MobilityReview? @relation(fields: [reviewId], references: [id])
+  riskCheck   RiskCheck?      @relation(fields: [riskCheckId], references: [id])
+
+  @@index([reviewId])
+  @@index([riskCheckId])
+}
