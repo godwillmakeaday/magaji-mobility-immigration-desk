@@ -145,6 +145,27 @@ NEXT_PUBLIC_WHATSAPP_NUMBER="234XXXXXXXXXX"
    (it ends with `?sslmode=require`).
 2. Put it in `.env` as `DATABASE_URL`.
 
+### Email notifications (optional)
+New submissions send an alert email to your team via [Resend](https://resend.com).
+Set these (see `.env.example`):
+
+```
+RESEND_API_KEY="re_..."
+NOTIFY_EMAIL_TO="ops@yourfirm.com"
+NOTIFY_EMAIL_FROM="Magaji Law <alerts@yourdomain.com>"
+```
+
+Behaviour:
+- Every new mobility review and risk check emails `NOTIFY_EMAIL_TO` with the key
+  details and a deep link into the admin console.
+- Compliance-queue matters (severe/high risk, agent disputes, and job offers
+  with payment exposure) are subject-prefixed `[URGENT]`.
+- **Fail-safe:** if the keys are unset or Resend is unreachable, the email is
+  skipped silently and the submission still saves and returns success. Sends are
+  time-limited so a slow provider can't hang the request. `NOTIFY_EMAIL_FROM`
+  must be a Resend-verified sender for reliable delivery (the default sandbox
+  sender works for initial testing only).
+
 ### Prisma migrations
 The client is generated automatically on `npm install` and `npm run build`
 (`postinstall` / `build` both run `prisma generate`). To create the tables:

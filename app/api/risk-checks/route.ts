@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { RED_FLAGS, riskFromCount } from "@/lib/risk";
+import { notifyNewRiskCheck } from "@/lib/notify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,6 +52,17 @@ export async function POST(request: Request) {
       },
       select: { id: true, riskLevel: true, redFlagCount: true },
     });
+
+    await notifyNewRiskCheck(
+      {
+        id: check.id,
+        destinationCountry,
+        mainConcern,
+        redFlagCount,
+        riskLevel,
+      },
+      new URL(request.url).origin
+    );
 
     return NextResponse.json(check, { status: 201 });
   } catch (err) {

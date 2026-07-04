@@ -5,6 +5,7 @@ import {
   PAYMENT_STATUS_TO_ENUM,
   CONTACT_METHOD_TO_ENUM,
 } from "@/lib/enums";
+import { notifyNewReview } from "@/lib/notify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,6 +53,12 @@ export async function POST(request: Request) {
 
   const paymentStatusLabel = str(body.paymentStatus);
   const contactLabel = str(body.preferredContactMethod);
+  const paymentStatusEnum = paymentStatusLabel
+    ? PAYMENT_STATUS_TO_ENUM[paymentStatusLabel] ?? null
+    : null;
+  const contactEnum = contactLabel
+    ? CONTACT_METHOD_TO_ENUM[contactLabel] ?? null
+    : null;
 
   try {
     const review = await prisma.mobilityReview.create({
@@ -62,21 +69,31 @@ export async function POST(request: Request) {
         currentLocation: str(body.currentLocation) || null,
         destinationCountry,
         matterType: matterType as never,
-        paymentStatus: (paymentStatusLabel
-          ? PAYMENT_STATUS_TO_ENUM[paymentStatusLabel] ?? null
-          : null) as never,
+        paymentStatus: paymentStatusEnum as never,
         amountPaidOrRequested: str(body.amountPaidOrRequested) || null,
         agentCompanyEmployer: str(body.agentCompanyEmployer) || null,
         promiseMade: str(body.promiseMade) || null,
         documentsAvailable: str(body.documentsAvailable) || null,
         mainConcern,
-        preferredContactMethod: (contactLabel
-          ? CONTACT_METHOD_TO_ENUM[contactLabel] ?? null
-          : null) as never,
+        preferredContactMethod: contactEnum as never,
         complianceAcknowledged,
       },
       select: { id: true },
     });
+
+    // Fire the notification (never throws; no-op if email is not configured).
+    await notifyNewReview(
+      {
+        id: review.id,
+        fullName,
+        phone,
+        destinationCountry,
+        matterType,
+        paymentStatus: paymentStatusEnum,
+        mainConcern,
+      },
+      new URL(request.url).origin
+    );
 
     return NextResponse.json({ id: review.id }, { status: 201 });
   } catch (err) {
