@@ -45,3 +45,20 @@ export function formatDate(iso: string): string {
     year: "numeric",
   });
 }
+
+export type DocRow = {
+  id: string;
+  createdAt: string;
+  fileName: string;
+  fileType: string | null;
+  fileSize: number | null;
+  storageUrl: string | null;
+  note: string | null;
+};
+
+export function formatBytes(n: number | null): string {
+  if (!n && n !== 0) return "—";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}

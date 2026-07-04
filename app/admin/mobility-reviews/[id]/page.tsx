@@ -11,7 +11,8 @@ import {
 import { ReviewStatusBadge } from "@/components/admin/badges";
 import DetailField from "@/components/admin/DetailField";
 import ReviewEditor from "@/components/admin/ReviewEditor";
-import DocumentsPanel from "@/components/admin/DocumentsPanel";
+import DocumentsManager from "@/components/admin/DocumentsManager";
+import { type DocRow } from "@/lib/admin-types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,8 +24,21 @@ export default async function MobilityReviewDetail({
 }) {
   if (!isAdminAuthenticated()) redirect("/admin");
 
-  const r = await prisma.mobilityReview.findUnique({ where: { id: params.id } });
+  const r = await prisma.mobilityReview.findUnique({
+    where: { id: params.id },
+    include: { documents: { orderBy: { createdAt: "desc" } } },
+  });
   if (!r) notFound();
+
+  const docs: DocRow[] = r.documents.map((d) => ({
+    id: d.id,
+    createdAt: d.createdAt.toISOString(),
+    fileName: d.fileName,
+    fileType: d.fileType,
+    fileSize: d.fileSize,
+    storageUrl: d.storageUrl,
+    note: d.note,
+  }));
 
   return (
     <div className="min-h-screen bg-mist">
@@ -105,7 +119,7 @@ export default async function MobilityReviewDetail({
               </dl>
             </section>
 
-            <DocumentsPanel />
+            <DocumentsManager documents={docs} reviewId={r.id} />
           </div>
 
           <ReviewEditor

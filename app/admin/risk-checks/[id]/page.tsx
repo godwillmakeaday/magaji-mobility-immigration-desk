@@ -2,11 +2,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatDate } from "@/lib/admin-types";
+import { formatDate, type DocRow } from "@/lib/admin-types";
 import { RiskLevelBadge, RiskStatusBadge } from "@/components/admin/badges";
 import DetailField from "@/components/admin/DetailField";
 import RiskEditor from "@/components/admin/RiskEditor";
-import DocumentsPanel from "@/components/admin/DocumentsPanel";
+import DocumentsManager from "@/components/admin/DocumentsManager";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -18,8 +18,21 @@ export default async function RiskCheckDetail({
 }) {
   if (!isAdminAuthenticated()) redirect("/admin");
 
-  const r = await prisma.riskCheck.findUnique({ where: { id: params.id } });
+  const r = await prisma.riskCheck.findUnique({
+    where: { id: params.id },
+    include: { documents: { orderBy: { createdAt: "desc" } } },
+  });
   if (!r) notFound();
+
+  const docs: DocRow[] = r.documents.map((d) => ({
+    id: d.id,
+    createdAt: d.createdAt.toISOString(),
+    fileName: d.fileName,
+    fileType: d.fileType,
+    fileSize: d.fileSize,
+    storageUrl: d.storageUrl,
+    note: d.note,
+  }));
 
   return (
     <div className="min-h-screen bg-mist">
@@ -78,7 +91,7 @@ export default async function RiskCheckDetail({
               </dl>
             </section>
 
-            <DocumentsPanel />
+            <DocumentsManager documents={docs} riskCheckId={r.id} />
           </div>
 
           <RiskEditor

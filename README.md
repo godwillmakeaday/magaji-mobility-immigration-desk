@@ -145,6 +145,31 @@ NEXT_PUBLIC_WHATSAPP_NUMBER="234XXXXXXXXXX"
    (it ends with `?sslmode=require`).
 2. Put it in `.env` as `DATABASE_URL`.
 
+### Document upload (admin matter file)
+Staff can attach documents to a matter from the admin detail pages, backed by
+**Vercel Blob**. Set `BLOB_READ_WRITE_TOKEN` (see `.env.example`); on Vercel this
+is added automatically when you create a Blob store (Storage → Blob).
+
+How it works and why it's safe:
+- Files upload **directly from the browser to Blob storage** using a short-lived
+  token that the server issues only to an authenticated admin, with a content-type
+  allow-list (PDF, common images, Word) and a 15 MB cap. Large files never pass
+  through the serverless function.
+- The `DocumentRecord` is written by an explicit admin-authenticated API call
+  after the upload resolves; that endpoint rejects any `storageUrl` that isn't in
+  our own Blob store.
+- The public intake form intentionally does **not** accept uploads — it keeps the
+  "we'll confirm the sharing channel first" message, matching the compliance
+  posture. Only staff attach files, after the client is verified.
+- Deleting a document removes both the record and the underlying blob.
+- If `BLOB_READ_WRITE_TOKEN` is unset, the upload button returns a clear
+  "not configured" message and the rest of the app is unaffected.
+
+Security limitation to note: Blob URLs are unguessable but **public** (not
+individually access-controlled). For highly sensitive documents, treat this as an
+interim store and plan a follow-up with private/authenticated access (signed,
+short-lived URLs behind the admin session). The data model already supports it.
+
 ### Email notifications (optional)
 New submissions send an alert email to your team via [Resend](https://resend.com).
 Set these (see `.env.example`):
