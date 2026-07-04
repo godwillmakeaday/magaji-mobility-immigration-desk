@@ -58,8 +58,59 @@ enum RiskStatus {
   CLOSED
 }
 
+enum AdminRole {
+  OWNER
+  STAFF
+}
+
+enum AuditAction {
+  LOGIN_SUCCESS
+  LOGIN_FAILURE
+  LOGOUT
+  REVIEW_STATUS_CHANGED
+  REVIEW_NOTE_CHANGED
+  RISK_STATUS_CHANGED
+  RISK_NOTE_CHANGED
+  DOCUMENT_UPLOADED
+  DOCUMENT_DELETED
+  USER_CREATED
+  USER_DISABLED
+  USER_ENABLED
+  USER_ROLE_CHANGED
+}
+
+model AdminUser {
+  id           String     @id @default(cuid())
+  createdAt    DateTime   @default(now())
+  email        String     @unique
+  name         String
+  passwordHash String
+  role         AdminRole  @default(STAFF)
+  disabled     Boolean    @default(false)
+  lastLoginAt  DateTime?
+  auditLogs    AuditLog[]
+
+  @@index([email])
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  createdAt  DateTime    @default(now())
+  action     AuditAction
+  actorId    String?
+  actorEmail String?
+  targetType String?
+  targetId   String?
+  detail     String?
+  actor      AdminUser?  @relation(fields: [actorId], references: [id])
+
+  @@index([createdAt])
+  @@index([action])
+}
+
 model MobilityReview {
   id                     String         @id @default(cuid())
+  reference              String?        @unique
   createdAt              DateTime       @default(now())
   updatedAt              DateTime       @updatedAt
   fullName               String

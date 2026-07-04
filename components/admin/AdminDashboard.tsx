@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Seal, IconShield } from "@/components/icons";
 import MobilityReviewsTable from "./MobilityReviewsTable";
 import RiskChecksTable from "./RiskChecksTable";
@@ -20,9 +21,11 @@ const TABS: { key: Tab; label: string }[] = [
 export default function AdminDashboard({
   reviews,
   risks,
+  admin,
 }: {
   reviews: ReviewRow[];
   risks: RiskRow[];
+  admin: { name: string; email: string; role: "OWNER" | "STAFF" };
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("reviews");
@@ -67,13 +70,37 @@ export default function AdminDashboard({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={logout}
-            className="rounded-sm border border-ink/25 px-4 py-2 text-[13px] font-semibold text-ink transition-colors hover:border-brass hover:text-brass-deep"
-          >
-            Sign out
-          </button>
+          <div className="flex items-center gap-3">
+            {admin.role === "OWNER" && (
+              <>
+                <Link
+                  href="/admin/users"
+                  className="rounded-sm px-3 py-2 text-[13px] font-semibold text-charcoal/70 transition-colors hover:text-ink"
+                >
+                  Users
+                </Link>
+                <Link
+                  href="/admin/audit"
+                  className="rounded-sm px-3 py-2 text-[13px] font-semibold text-charcoal/70 transition-colors hover:text-ink"
+                >
+                  Audit log
+                </Link>
+              </>
+            )}
+            <div className="hidden text-right sm:block">
+              <p className="text-[13px] font-semibold text-ink">{admin.name}</p>
+              <p className="text-[11px] uppercase tracking-wide text-charcoal/50">
+                {admin.role === "OWNER" ? "Owner" : "Staff"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={logout}
+              className="rounded-sm border border-ink/25 px-4 py-2 text-[13px] font-semibold text-ink transition-colors hover:border-brass hover:text-brass-deep"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 

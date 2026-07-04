@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { ADMIN_COOKIE } from "@/lib/auth";
+import { clearSessionCookie, readSessionClaims } from "@/lib/auth";
+import { recordAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST() {
-  cookies().delete(ADMIN_COOKIE);
+  const claims = readSessionClaims();
+  if (claims) {
+    await recordAudit({
+      action: "LOGOUT",
+      actorId: claims.uid,
+      actorEmail: claims.email,
+    });
+  }
+  clearSessionCookie();
   return NextResponse.json({ ok: true });
 }

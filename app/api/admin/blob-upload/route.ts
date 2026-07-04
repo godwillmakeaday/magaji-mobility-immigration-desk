@@ -1,6 +1,6 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
-import { isAdminAuthenticated } from "@/lib/auth";
+import { getCurrentAdmin } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ const MAX_BYTES = 15 * 1024 * 1024; // 15 MB
 
 export async function POST(request: Request) {
   // Only authenticated staff may obtain an upload token.
-  if (!isAdminAuthenticated()) {
+  if (!(await getCurrentAdmin())) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
   if (!process.env.BLOB_READ_WRITE_TOKEN) {

@@ -121,3 +121,28 @@ export const RISK_LEVEL_LABEL: Record<string, string> = {
   HIGH_RISK: "High Risk",
   SEVERE_RISK: "Severe Risk",
 };
+
+// ---- Admin roles -------------------------------------------------------------
+export const ADMIN_ROLE_OPTIONS = ["OWNER", "STAFF"] as const;
+
+export const ADMIN_ROLE_LABEL: Record<string, string> = {
+  OWNER: "Owner",
+  STAFF: "Staff",
+};
+
+// ---- Audit actions -----------------------------------------------------------
+export const AUDIT_ACTION_LABEL: Record<string, string> = {
+  LOGIN_SUCCESS: "Signed in",
+  LOGIN_FAILURE: "Failed sign-in",
+  LOGOUT: "Signed out",
+  REVIEW_STATUS_CHANGED: "Review status changed",
+  REVIEW_NOTE_CHANGED: "Review note changed",
+  RISK_STATUS_CHANGED: "Risk status changed",
+  RISK_NOTE_CHANGED: "Risk note changed",
+  DOCUMENT_UPLOADED: "Document uploaded",
+  DOCUMENT_DELETED: "Document deleted",
+  USER_CREATED: "User created",
+  USER_DISABLED: "User disabled",
+  USER_ENABLED: "User enabled",
+  USER_ROLE_CHANGED: "User role changed",
+};

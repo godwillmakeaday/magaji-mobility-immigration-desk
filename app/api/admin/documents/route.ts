@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAdminAuthenticated } from "@/lib/auth";
+import { getCurrentAdmin } from "@/lib/auth";
+import { recordAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +21,8 @@ function isBlobUrl(url: string): boolean {
 }
 
 export async function POST(request: Request) {
-  if (!isAdminAuthenticated()) {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
@@ -70,6 +72,14 @@ export async function POST(request: Request) {
         riskCheckId: riskCheckId ?? null,
         note: note?.trim() || null,
       },
+    });
+    await recordAudit({
+      action: "DOCUMENT_UPLOADED",
+      actorId: admin.id,
+      actorEmail: admin.email,
+      targetType: reviewId ? "MobilityReview" : "RiskCheck",
+      targetId: reviewId ?? riskCheckId ?? null,
+      detail: fileName,
     });
     return NextResponse.json({ ok: true, document: doc }, { status: 201 });
   } catch (err) {

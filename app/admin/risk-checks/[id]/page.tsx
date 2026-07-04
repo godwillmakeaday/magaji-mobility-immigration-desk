@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { isAdminAuthenticated } from "@/lib/auth";
+import { getCurrentAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate, type DocRow } from "@/lib/admin-types";
 import { RiskLevelBadge, RiskStatusBadge } from "@/components/admin/badges";
@@ -16,7 +16,7 @@ export default async function RiskCheckDetail({
 }: {
   params: { id: string };
 }) {
-  if (!isAdminAuthenticated()) redirect("/admin");
+  if (!(await getCurrentAdmin())) redirect("/admin");
 
   const r = await prisma.riskCheck.findUnique({
     where: { id: params.id },

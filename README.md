@@ -132,13 +132,19 @@ Copy `.env.example` to `.env` and fill in:
 
 ```
 DATABASE_URL="postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require"
-ADMIN_PASSWORD="change-this-password"
+AUTH_SECRET="generate-a-long-random-secret"     # e.g. openssl rand -base64 32
+ADMIN_SEED_EMAIL="owner@yourfirm.com"
+ADMIN_SEED_PASSWORD="change-this-strong-password"
+ADMIN_SEED_NAME="Owner Name"
 NEXT_PUBLIC_WHATSAPP_NUMBER="234XXXXXXXXXX"
 ```
 
 - `DATABASE_URL` — Neon **pooled** connection string.
-- `ADMIN_PASSWORD` — password for `/admin`.
+- `AUTH_SECRET` — signs admin session cookies; use a long random value.
+- `ADMIN_SEED_*` — used once by `npm run db:seed` to create the first owner.
 - `NEXT_PUBLIC_WHATSAPP_NUMBER` — international format, digits only.
+
+(Optional: `RESEND_*` for email, `BLOB_READ_WRITE_TOKEN` for uploads — see below.)
 
 ### Connect to Neon PostgreSQL
 1. Create a project at neon.tech and copy the **pooled** connection string
@@ -213,39 +219,72 @@ npx prisma migrate dev --name init
 npm run dev               # http://localhost:3000
 ```
 
+### First owner + migrations
+The schema now includes admin users, an audit log, and a client reference code.
+After setting `DATABASE_URL`, `AUTH_SECRET`, and the `ADMIN_SEED_*` vars:
+
+```bash
+npx prisma migrate dev --name add-users-audit-reference
+npm run db:seed      # creates the first OWNER from ADMIN_SEED_* (re-runnable)
+```
+
+(Existing reviews created before this migration have no reference code and
+simply aren't lookup-able; new submissions get one automatically.)
+
 ### Admin console
-- Visit `/admin` and sign in with `ADMIN_PASSWORD`.
-- Dashboard cards: total / new mobility reviews, total / severe / high risk
-  checks, open matters.
-- Tabs: **Mobility Reviews**, **Risk Checks**, **Compliance Queue**,
-  **Closed Matters**.
-- The **Compliance Queue** auto-surfaces every severe- and high-risk check,
-  every agent-dispute/refund matter, and every job-offer matter where money is
-  partial/full/about-to-be-paid.
-- Open any row via **View Details** to see all fields, update the status, and
-  save an internal note.
+- Visit `/admin` and sign in with your **email and password** (per-user, not a
+  shared password).
+- Dashboard cards, tabs (**Mobility Reviews**, **Risk Checks**, **Compliance
+  Queue**, **Closed Matters**), and per-matter status + internal note editing —
+  every status/note change is recorded in the audit log with the actor.
+- **Documents** attach to each matter (see below).
+
+### Admin users, roles & audit log
+- Two roles: **OWNER** and **STAFF**. Both manage matters; only OWNER can manage
+  users and view the audit log (links appear in the header for owners).
+- **Users** (`/admin/users`): add users with a temporary password, change roles,
+  and disable/enable access. Guards prevent changing your own account and
+  removing the last active owner. Disabling a user takes effect immediately
+  (enforced on every request), so it doubles as "revoke session".
+- **Audit log** (`/admin/audit`): the 100 most recent actions — sign-ins
+  (including failures), status/note changes, document upload/delete, and user
+  administration — each with actor, target, and detail.
+
+### Client status lookup
+- Public page `/status`: a client enters their **reference code + the phone
+  number they used** and sees only the current status and its meaning — no other
+  personal data. The reference is shown on the submission success screen and can
+  be re-checked any time.
+- Anti-enumeration: the two-factor requirement (code **and** phone), a generic
+  "no match" message that never reveals which field was wrong, and a best-effort
+  rate limit (10/min per IP). See the security note below on the limiter.
 
 ### Deploy to Vercel
 1. Push to GitHub, import the repo in Vercel (Next.js preset auto-detected).
-2. Add the three environment variables in **Project → Settings → Environment
-   Variables**. `DATABASE_URL` and `ADMIN_PASSWORD` should be encrypted
+2. Add environment variables in **Project → Settings → Environment Variables**.
+   `DATABASE_URL`, `AUTH_SECRET`, and `ADMIN_SEED_PASSWORD` should be encrypted
    (default); `NEXT_PUBLIC_WHATSAPP_NUMBER` is public.
 3. The build runs `prisma generate && next build` automatically. Run
-   `npx prisma migrate deploy` against the production database once (locally
-   with the production `DATABASE_URL`, or as a Vercel build/deploy step).
+   `npx prisma migrate deploy` then `npm run db:seed` against the production
+   database once (locally with the production `DATABASE_URL`).
 
-### Security limitations of the temporary admin approach
-This is a **single shared password**, not real user authentication. The cookie
-holds an HMAC keyed by `ADMIN_PASSWORD` (the password itself is never stored in
-the cookie), is `httpOnly`, `sameSite=lax`, `secure` in production, and expires
-after 8 hours. Limitations to be aware of before this handles sensitive client
-data at scale:
-- No individual accounts, roles, audit log, rate limiting, or lockout.
-- A leaked password grants full access until it is rotated (rotating
-  `ADMIN_PASSWORD` instantly invalidates all existing cookies).
-- Suitable for a small trusted team as an interim tool. Before wider use, move
-  to real auth (e.g. Auth.js / Clerk), per-user roles, and an audit trail — the
-  intake/risk data model already supports that expansion.
+### Admin security posture & remaining limitations
+Real per-user auth: individual accounts, scrypt-hashed passwords, roles, and an
+audit trail. Sessions are signed (HMAC via `AUTH_SECRET`) httpOnly cookies,
+`sameSite=lax`, `secure` in production, 8-hour expiry, and are re-validated
+against the database on every request so a disabled account loses access at once.
+Still worth planning before heavy sensitive use:
+- **No self-service password reset / change yet.** Owners set a temporary
+  password; a "change my password" flow and email-based reset are the natural
+  next step.
+- **Rate limiting is best-effort (in-memory, per-instance).** Serverless runs
+  multiple instances, so for a hard global limit use a shared store (Upstash /
+  Vercel KV). The reference+phone requirement is the primary anti-enumeration
+  control.
+- **Blob URLs are public** (unguessable but not access-controlled) — see the
+  document-upload note.
+- No login lockout/throttle after repeated failures (failures *are* audited);
+  add IP/account throttling for production hardening.
 
 ### Build notes / issues resolved
 - **Prisma engine download is network-restricted in some build sandboxes.**

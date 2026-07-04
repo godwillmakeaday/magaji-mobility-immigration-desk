@@ -1,4 +1,4 @@
-import { isAdminAuthenticated } from "@/lib/auth";
+import { getCurrentAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AdminLogin from "@/components/admin/AdminLogin";
 import AdminDashboard from "@/components/admin/AdminDashboard";
@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function AdminPage() {
-  if (!isAdminAuthenticated()) {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
     return <AdminLogin />;
   }
 
@@ -53,5 +54,5 @@ export default async function AdminPage() {
     internalNote: r.internalNote,
   }));
 
-  return <AdminDashboard reviews={reviewRows} risks={riskRows} />;
+  return <AdminDashboard reviews={reviewRows} risks={riskRows} admin={admin} />;
 }

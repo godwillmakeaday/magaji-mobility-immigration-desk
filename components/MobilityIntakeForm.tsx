@@ -77,6 +77,7 @@ export default function MobilityIntakeForm() {
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">(
     "idle"
   );
+  const [reference, setReference] = useState<string | null>(null);
   const [serverError, setServerError] = useState("");
 
   const set = (key: keyof Form) => (value: string) =>
@@ -150,6 +151,8 @@ export default function MobilityIntakeForm() {
         if (data.errors) setErrors(data.errors);
         throw new Error(data.error || "Could not save your request.");
       }
+      const data = await res.json().catch(() => ({}));
+      setReference(data.reference ?? null);
       setStatus("saved");
     } catch (err) {
       setStatus("error");
@@ -193,6 +196,27 @@ export default function MobilityIntakeForm() {
                   will confirm the proper document-sharing channel before any
                   sensitive documents are shared.
                 </p>
+
+                {reference && (
+                  <div className="mx-auto mt-6 max-w-sm rounded-md border border-brass/30 bg-brass/[0.06] px-5 py-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-brass-deep">
+                      Your reference code
+                    </p>
+                    <p className="mt-1 font-display text-2xl tracking-wide text-ink">
+                      {reference}
+                    </p>
+                    <p className="mt-2 text-[13px] leading-relaxed text-charcoal/70">
+                      Keep this code. You can check your status any time at{" "}
+                      <a
+                        href="/status"
+                        className="font-semibold text-brass-deep underline underline-offset-2"
+                      >
+                        /status
+                      </a>{" "}
+                      using this code and your phone number.
+                    </p>
+                  </div>
+                )}
                 <div className="mt-7 flex justify-center">
                   <WhatsAppButton href={waLink} variant="green" withArrow>
                     Send Details on WhatsApp

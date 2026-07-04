@@ -6,6 +6,7 @@ import {
   CONTACT_METHOD_TO_ENUM,
 } from "@/lib/enums";
 import { notifyNewReview } from "@/lib/notify";
+import { generateReference } from "@/lib/reference";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -61,25 +62,45 @@ export async function POST(request: Request) {
     : null;
 
   try {
-    const review = await prisma.mobilityReview.create({
-      data: {
-        fullName,
-        phone,
-        email: email || null,
-        currentLocation: str(body.currentLocation) || null,
-        destinationCountry,
-        matterType: matterType as never,
-        paymentStatus: paymentStatusEnum as never,
-        amountPaidOrRequested: str(body.amountPaidOrRequested) || null,
-        agentCompanyEmployer: str(body.agentCompanyEmployer) || null,
-        promiseMade: str(body.promiseMade) || null,
-        documentsAvailable: str(body.documentsAvailable) || null,
-        mainConcern,
-        preferredContactMethod: contactEnum as never,
-        complianceAcknowledged,
-      },
-      select: { id: true },
-    });
+    let review: { id: string; reference: string | null } | null = null;
+    // Retry a few times in the astronomically unlikely event of a code clash.
+    for (let attempt = 0; attempt < 5 && !review; attempt++) {
+      const reference = generateReference();
+      try {
+        review = await prisma.mobilityReview.create({
+          data: {
+            reference,
+            fullName,
+            phone,
+            email: email || null,
+            currentLocation: str(body.currentLocation) || null,
+            destinationCountry,
+            matterType: matterType as never,
+            paymentStatus: paymentStatusEnum as never,
+            amountPaidOrRequested: str(body.amountPaidOrRequested) || null,
+            agentCompanyEmployer: str(body.agentCompanyEmployer) || null,
+            promiseMade: str(body.promiseMade) || null,
+            documentsAvailable: str(body.documentsAvailable) || null,
+            mainConcern,
+            preferredContactMethod: contactEnum as never,
+            complianceAcknowledged,
+          },
+          select: { id: true, reference: true },
+        });
+      } catch (e: unknown) {
+        // Unique constraint on reference — regenerate and retry.
+        const code = (e as { code?: string })?.code;
+        if (code === "P2002") continue;
+        throw e;
+      }
+    }
+
+    if (!review) {
+      return NextResponse.json(
+        { error: "Could not save your request. Please try again." },
+        { status: 500 }
+      );
+    }
 
     // Fire the notification (never throws; no-op if email is not configured).
     await notifyNewReview(
@@ -95,7 +116,10 @@ export async function POST(request: Request) {
       new URL(request.url).origin
     );
 
-    return NextResponse.json({ id: review.id }, { status: 201 });
+    return NextResponse.json(
+      { id: review.id, reference: review.reference },
+      { status: 201 }
+    );
   } catch (err) {
     console.error("Failed to create mobility review:", err);
     return NextResponse.json(

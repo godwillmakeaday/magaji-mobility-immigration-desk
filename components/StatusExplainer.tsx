@@ -30,6 +30,17 @@ export default function StatusExplainer() {
             </div>
           ))}
         </dl>
+
+        <p className="mt-8 text-[15px] text-charcoal/75">
+          Already submitted a request?{" "}
+          <a
+            href="/status"
+            className="font-semibold text-brass-deep underline underline-offset-2 hover:text-ink"
+          >
+            Check your status
+          </a>{" "}
+          with your reference code and phone number.
+        </p>
       </div>
     </section>
   );

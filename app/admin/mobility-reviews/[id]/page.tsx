@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { isAdminAuthenticated } from "@/lib/auth";
+import { getCurrentAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/admin-types";
 import {
@@ -22,7 +22,7 @@ export default async function MobilityReviewDetail({
 }: {
   params: { id: string };
 }) {
-  if (!isAdminAuthenticated()) redirect("/admin");
+  if (!(await getCurrentAdmin())) redirect("/admin");
 
   const r = await prisma.mobilityReview.findUnique({
     where: { id: params.id },
@@ -67,6 +67,7 @@ export default async function MobilityReviewDetail({
                 Submission
               </h2>
               <dl className="grid gap-5 sm:grid-cols-2">
+                <DetailField label="Reference" value={r.reference} />
                 <DetailField label="Full name" value={r.fullName} />
                 <DetailField label="Phone / WhatsApp" value={r.phone} />
                 <DetailField label="Email" value={r.email} />

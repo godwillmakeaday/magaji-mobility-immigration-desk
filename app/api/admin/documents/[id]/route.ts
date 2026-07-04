@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { del } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
-import { isAdminAuthenticated } from "@/lib/auth";
+import { getCurrentAdmin } from "@/lib/auth";
+import { recordAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,7 +11,8 @@ export async function DELETE(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
-  if (!isAdminAuthenticated()) {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
@@ -33,6 +35,14 @@ export async function DELETE(
     }
 
     await prisma.documentRecord.delete({ where: { id: params.id } });
+    await recordAudit({
+      action: "DOCUMENT_DELETED",
+      actorId: admin.id,
+      actorEmail: admin.email,
+      targetType: doc.reviewId ? "MobilityReview" : "RiskCheck",
+      targetId: doc.reviewId ?? doc.riskCheckId ?? null,
+      detail: doc.fileName,
+    });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Failed to delete document:", err);
